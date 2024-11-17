@@ -32,7 +32,7 @@
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100">
     {% block content %}{% endblock %}
     {% load chat_widget %}
     {% chat_widget %}
@@ -46,8 +46,17 @@
             const chatContainer = document.getElementById('chat-container');
             const userInput = document.getElementById('user-input');
 
+            // Check if elements exist before adding event listeners
+            if (!chatToggle || !chatWindow || !chatMinimize || !chatForm || !chatContainer || !userInput) {
+                console.error('Required chat elements not found');
+                return;
+            }
+
             chatToggle.addEventListener('click', () => {
                 chatWindow.classList.toggle('hidden');
+                if (!chatWindow.classList.contains('hidden')) {
+                    userInput.focus();
+                }
             });
 
             chatMinimize.addEventListener('click', () => {
@@ -67,13 +76,20 @@
                 const loadingId = appendMessage('ai', 'Thinking...');
 
                 try {
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                     const response = await fetch('/chat/', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': csrfToken
                         },
                         body: JSON.stringify({ question: question })
                     });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
 
                     const data = await response.json();
                     
@@ -82,17 +98,19 @@
                     if (loadingMsg) {
                         loadingMsg.remove();
                     }
-
-                    // Add AI response
-                    appendMessage('ai', data.answer);
+                    if (data.answer) {
+                        appendMessage('ai', data.answer);
+                    } else {
+                        throw new Error('No answer in response');
+                    }
 
                 } catch (error) {
-                    console.error('Error:', error);
+                    console.error('Chat error:', error);
                     const loadingMsg = document.getElementById(loadingId);
                     if (loadingMsg) {
                         loadingMsg.remove();
                     }
-                    appendMessage('ai', 'Sorry, there was an error processing your request.');
+                    appendMessage('ai', 'Sorry, I encountered an error. Please try again in a moment.');
                 }
             });
 
@@ -105,7 +123,6 @@
                 if (type === 'user') {
                     messageDiv.innerHTML = `<strong>You:</strong><br>${content}`;
                 } else {
-                    // Format markdown-style content
                     let formattedContent = content
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')
@@ -119,6 +136,14 @@
                 chatContainer.scrollTop = chatContainer.scrollHeight;
                 return messageId;
             }
+
+            // Enable enter key to submit
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatForm.dispatchEvent(new Event('submit'));
+                }
+            });
         });
     </script>
 </body>

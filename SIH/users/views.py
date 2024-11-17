@@ -23,15 +23,19 @@ def logout_view(request):
 @csrf_exempt
 def chat(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        question = data.get('question')
-        
-        # Configure Gemini
-        genai.configure(api_key=settings.GOOGLE_API_KEY)
-        model = genai.GenerativeModel('gemini-pro')
-        
-        # Enhanced context and persona for the AI
-        prompt = f"""You are LawBot, an intelligent AI assistant specializing in legal matters and constitutional law. 
+        try:
+            data = json.loads(request.body)
+            question = data.get('question')
+            
+            if not question:
+                return JsonResponse({'error': 'Question is required'}, status=400)
+            
+            # Configure Gemini
+            genai.configure(api_key=settings.GOOGLE_API_KEY)
+            model = genai.GenerativeModel('gemini-pro')
+            
+            # Enhanced context and persona for the AI
+            prompt = f"""You are LawBot, an intelligent AI assistant specializing in legal matters and constitutional law. 
 Format your responses using the following markdown-style conventions:
 
 • Use **bold** for important terms and concepts
@@ -49,17 +53,33 @@ Question to answer:
 {question}
 
 Remember to maintain a professional yet approachable tone and format the response for easy reading."""
-        
-        response = model.generate_content(prompt)
-        
-        # Save the conversation
-        Conversation.objects.create(
-            question=question,
-            answer=response.text
-        )
-        
-        return JsonResponse({
-            'answer': response.text
-        })
+            
+            try:
+                response = model.generate_content(prompt)
+                
+                # Save the conversation
+                Conversation.objects.create(
+                    question=question,
+                    answer=response.text
+                )
+                
+                return JsonResponse({
+                    'answer': response.text
+                })
+            except Exception as e:
+                print(f"Gemini API Error: {str(e)}")
+                return JsonResponse({
+                    'error': 'AI service temporarily unavailable'
+                }, status=503)
+                
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'error': 'Invalid JSON data'
+            }, status=400)
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            return JsonResponse({
+                'error': 'Internal server error'
+            }, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
