@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+        <h2 class="text-2xl font-bold text-center mb-6">Game Room</h2>
+        
+        <div class="space-y-6">
+            <div class="text-center">
+                <img src="data:image/png;base64,{{ qr_code }}" 
+                     alt="Room QR Code" 
+                     class="mx-auto w-48 h-48">
+            </div>
+            
+            <div class="space-y-2">
+                <p class="text-sm text-gray-600">Share this link with friends:</p>
+                <input type="text" 
+                       value="{{ room_url }}" 
+                       class="w-full p-2 border rounded bg-gray-50" 
+                       readonly>
+            </div>
+            
+            <div class="space-y-2">
+                <p class="font-semibold">Players:</p>
+                <ul class="list-disc pl-5">
+                    {% for player in room.players.all %}
+                        <li>{{ player.username }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="space-y-2">
+                <p class="text-sm text-gray-600">Room ID:</p>
+                <input type="text" 
+                       value="{{ room.room_id }}" 
+                       class="w-full p-2 border rounded bg-gray-50" 
+                       readonly>
+            </div>
+            
+            <a href="{% url 'snake_ladder:game_board' room.room_id %}" 
+               class="block w-full bg-blue-500 hover:bg-blue-600 text-white text-center font-semibold py-2 px-4 rounded">
+                Start Game
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
