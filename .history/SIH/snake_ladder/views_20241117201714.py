@@ -148,10 +148,4 @@ def get_game_state(request, room_id):
     return JsonResponse({
         'positions': positions,
         'current_turn': room.current_turn.id,
-        'current_turn_username': room.current_turn.username,
-        'players': [{
-            'id': player.id,
-            'username': player.username,
-            'position': positions[player.id]
-        } for player in room.players.all()]
     })

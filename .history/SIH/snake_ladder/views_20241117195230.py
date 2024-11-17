@@ -7,7 +7,6 @@ import qrcode.image.svg
 from io import BytesIO
 from base64 import b64encode
 import time
-from django.http import JsonResponse
 
 def generate_dice_roll():
     """
@@ -136,22 +135,3 @@ def join_room(request, room_id):
     if request.user not in room.players.all():
         room.players.add(request.user)
     return redirect('snake_ladder:game_board', room_id=room_id)
-
-@login_required
-def get_game_state(request, room_id):
-    room = get_object_or_404(GameRoom, room_id=room_id)
-    positions = {}
-    for player in room.players.all():
-        position = PlayerPosition.objects.get(room=room, player=player)
-        positions[player.id] = position.position
-    
-    return JsonResponse({
-        'positions': positions,
-        'current_turn': room.current_turn.id,
-        'current_turn_username': room.current_turn.username,
-        'players': [{
-            'id': player.id,
-            'username': player.username,
-            'position': positions[player.id]
-        } for player in room.players.all()]
-    })

@@ -7,20 +7,15 @@
             <div class="flex justify-between items-center mb-4">
                 <div class="flex flex-col">
                     <h1 class="text-2xl md:text-3xl font-bold text-center">Snake & Ladder Game</h1>
-                    <div class="mt-2 mb-4 text-center text-lg font-semibold text-blue-600">
-                        Current Turn: {{ current_turn.username }}
-                    </div>
                     <div class="space-y-2">
                         {% for player in players %}
-                            <div class="flex items-center space-x-2 p-2 rounded-lg {% if player == current_turn %}bg-blue-100 border border-blue-300{% endif %}" data-player-id="{{ player.id }}">
+                            <div class="flex items-center space-x-2">
                                 {% with color=room.get_player_color|get_item:player %}
                                 <div class="w-3 h-3 rounded-full bg-{{ color.0 }}"></div>
                                 <span class="text-sm">
                                     {{ player.username }}
-                                    {% if player == current_turn %}
-                                        <span class="font-bold text-blue-600">(Current Turn)</span>
-                                    {% endif %}
-                                    - <span class="position-span">Position: {{ positions|get_item:player.id }}</span>
+                                    {% if player == current_turn %}(Current Turn){% endif %}
+                                    - Position: {{ positions|get_item:player.id }}
                                 </span>
                                 {% endwith %}
                             </div>
@@ -56,10 +51,8 @@
                                       cursor-pointer group"
                                  data-cell="{{ cell_number }}"
                                  {% for player in players %}
-                                     {% with color=room.get_player_color|get_item:player %}
-                                         data-color-{{ player.id }}="{{ color.0 }}"
-                                         data-player-name-{{ player.id }}="{{ player.username }}"
-                                     {% endwith %}
+                                     data-color-{{ player.id }}="{{ room.get_player_color|get_item:player.0 }}"
+                                     data-player-name-{{ player.id }}="{{ player.username }}"
                                  {% endfor %}>
                                 <span class="absolute top-0 left-0 text-[8px] md:text-xs font-bold p-0.5">{{ cell_number }}</span>
                                 {% for player in players %}
@@ -94,35 +87,11 @@ function updateGameState() {
     fetch('{% url "snake_ladder:game_state" room.room_id %}')
         .then(response => response.json())
         .then(data => {
-            // Update current turn indicator
-            document.querySelector('.text-lg.font-semibold.text-blue-600').textContent = 
-                `Current Turn: ${data.current_turn_username}`;
-            
-            // Update player list and positions
-            const playerList = document.querySelector('.space-y-2');
-            data.players.forEach(player => {
-                const playerElement = playerList.querySelector(`[data-player-id="${player.id}"]`);
-                if (playerElement) {
-                    const positionSpan = playerElement.querySelector('.position-span');
-                    positionSpan.textContent = `Position: ${player.position}`;
-                    
-                    // Update current turn highlighting
-                    if (player.id === data.current_turn) {
-                        playerElement.classList.add('bg-blue-100', 'border', 'border-blue-300');
-                    } else {
-                        playerElement.classList.remove('bg-blue-100', 'border', 'border-blue-300');
-                    }
-                }
-            });
-
-            // Clear and update pawns
-            document.querySelectorAll('[data-cell]').forEach(cell => {
-                const pawns = cell.querySelectorAll('.absolute.inset-0');
-                pawns.forEach(pawn => pawn.remove());
-            });
-            
-            // Add new pawns
+            // Update positions
             Object.entries(data.positions).forEach(([playerId, position]) => {
+                const oldPawn = document.querySelector(`[data-player="${playerId}"]`);
+                if (oldPawn) oldPawn.remove();
+                
                 const newCell = document.querySelector(`[data-cell="${position}"]`);
                 if (newCell) {
                     const playerColor = newCell.getAttribute(`data-color-${playerId}`);
@@ -137,13 +106,12 @@ function updateGameState() {
                 }
             });
             
-            // Update roll button state
+            // Update current turn
             const rollButton = document.querySelector('button[name="roll"]');
             rollButton.disabled = (data.current_turn !== {{ user.id }});
         });
 }
 
-// Update more frequently for better real-time experience
-setInterval(updateGameState, 500);
+setInterval(updateGameState, 1000);
 </script>
 {% endblock %}
