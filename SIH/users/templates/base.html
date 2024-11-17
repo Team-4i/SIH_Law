@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .message {
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .user-message {
+            margin-left: 20%;
+            background-color: #4B5563;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .ai-message {
+            margin-right: 20%;
+            background-color: #374151;
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        #chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chat-container::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #4B5563;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+    {% load chat_widget %}
+    {% chat_widget %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatToggle = document.getElementById('chat-toggle');
+            const chatWindow = document.getElementById('chat-window');
+            const chatMinimize = document.getElementById('chat-minimize');
+            const chatForm = document.getElementById('chat-form');
+            const chatContainer = document.getElementById('chat-container');
+            const userInput = document.getElementById('user-input');
+
+            chatToggle.addEventListener('click', () => {
+                chatWindow.classList.toggle('hidden');
+            });
+
+            chatMinimize.addEventListener('click', () => {
+                chatWindow.classList.add('hidden');
+            });
+
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const question = userInput.value.trim();
+                if (!question) return;
+
+                // Add user message
+                appendMessage('user', question);
+                userInput.value = '';
+
+                // Show loading
+                const loadingId = appendMessage('ai', 'Thinking...');
+
+                try {
+                    const response = await fetch('/chat/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ question: question })
+                    });
+
+                    const data = await response.json();
+                    
+                    // Remove loading message
+                    const loadingMsg = document.getElementById(loadingId);
+                    if (loadingMsg) {
+                        loadingMsg.remove();
+                    }
+
+                    // Add AI response
+                    appendMessage('ai', data.answer);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    const loadingMsg = document.getElementById(loadingId);
+                    if (loadingMsg) {
+                        loadingMsg.remove();
+                    }
+                    appendMessage('ai', 'Sorry, there was an error processing your request.');
+                }
+            });
+
+            function appendMessage(type, content) {
+                const messageId = 'msg-' + Date.now();
+                const messageDiv = document.createElement('div');
+                messageDiv.id = messageId;
+                messageDiv.className = `message ${type}-message`;
+                
+                if (type === 'user') {
+                    messageDiv.innerHTML = `<strong>You:</strong><br>${content}`;
+                } else {
+                    // Format markdown-style content
+                    let formattedContent = content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                        .replace(/•(.*?)(?=(\n|$))/g, '<li>$1</li>')
+                        .replace(/\n\n/g, '<br><br>');
+                    
+                    messageDiv.innerHTML = formattedContent;
+                }
+                
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                return messageId;
+            }
+        });
+    </script>
+</body>
+</html>

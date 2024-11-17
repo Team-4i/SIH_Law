@@ -1,63 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sign In</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background-color: #f8f9fa;
-        }
-        .login-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .google-btn {
-            background: #4285f4;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            display: inline-block;
-            margin: 20px 0;
-            transition: background 0.3s ease;
-        }
-        .google-btn:hover {
-            background: #357abd;
-            color: white;
-        }
-        .logout-btn {
-            color: #dc3545;
-            text-decoration: none;
-        }
-        .logout-btn:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    {% load socialaccount %}
-    <div class="login-container">
-        <h2 class="mb-4">Google Login</h2>
-        {% if not user.is_authenticated %}
-            <a href="{% provider_login_url 'google' %}?next=/" class="google-btn">
-                Login with Google
-            </a>
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% load socialaccount %}
+
+<div class="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 class="text-2xl font-bold text-center mb-6">Welcome to LawBot</h2>
+        
+        {% if user.is_authenticated %}
+            <div class="text-center">
+                <p class="mb-4">Welcome, {{ user.username }}!</p>
+                <a href="{% url 'account_logout' %}" 
+                   class="inline-block bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition-colors">
+                    Sign Out
+                </a>
+            </div>
         {% else %}
-            <p class="mb-3">You are signed in as {{ user.email }}</p>
-            <a href="logout" class="logout-btn">Logout</a>
+            <div class="text-center">
+                <p class="mb-4">Please sign in to continue</p>
+                <a href="{% provider_login_url 'google' %}"
+                   class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors">
+                    Sign in with Google
+                </a>
+            </div>
         {% endif %}
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}
