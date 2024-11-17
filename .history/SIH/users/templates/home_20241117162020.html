@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% load socialaccount %}
+
+<div class="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
+    <div class="bg-white p-8 rounded-lg shadow-md w-96">
+        <h2 class="text-2xl font-bold text-center mb-6">Welcome to LawBot</h2>
+        
+        {% if user.is_authenticated %}
+            <div class="text-center">
+                <p class="mb-4">Welcome, {{ user.username }}!</p>
+                <a href="{% url 'account_logout' %}" 
+                   class="inline-block bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition-colors">
+                    Sign Out
+                </a>
+            </div>
+        {% else %}
+            <div class="text-center">
+                <p class="mb-4">Please sign in to continue</p>
+                <a href="{% provider_login_url 'google' %}"
+                   class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors">
+                    Sign in with Google
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
