@@ -28,6 +28,7 @@ def game_board(request, room_id):
     }
     return render(request, 'matching_card/game_board.html', context)
 
+
 @login_required
 def room_detail(request, room_id):
     room = get_object_or_404(GameRoom, room_id=room_id)
