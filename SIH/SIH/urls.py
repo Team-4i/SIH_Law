@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('game/', include('snake_ladder.urls')),
+    path('matching-card/', include('matching_card.urls')),
 ]
