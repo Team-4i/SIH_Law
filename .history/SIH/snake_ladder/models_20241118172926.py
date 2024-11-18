@@ -49,13 +49,6 @@ class GameRoom(models.Model):
     def __str__(self):
         return f"Room by {self.creator.username}"
 
-    def get_cell_history(self, player=None):
-        """Get cell history for the room, optionally filtered by player"""
-        history = CellHistory.objects.filter(room=self)
-        if player:
-            history = history.filter(player=player)
-        return history.select_related('cell', 'player').order_by('-visited_at')
-
 class PlayerPosition(models.Model):
     room = models.ForeignKey(GameRoom, on_delete=models.CASCADE, related_name='player_positions')
     player = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -49,13 +49,6 @@ class GameRoom(models.Model):
     def __str__(self):
         return f"Room by {self.creator.username}"
 
-    def get_cell_history(self, player=None):
-        """Get cell history for the room, optionally filtered by player"""
-        history = CellHistory.objects.filter(room=self)
-        if player:
-            history = history.filter(player=player)
-        return history.select_related('cell', 'player').order_by('-visited_at')
-
 class PlayerPosition(models.Model):
     room = models.ForeignKey(GameRoom, on_delete=models.CASCADE, related_name='player_positions')
     player = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -63,18 +56,3 @@ class PlayerPosition(models.Model):
 
     class Meta:
         unique_together = ('room', 'player')
-
-class CellHistory(models.Model):
-    player = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey(GameRoom, on_delete=models.CASCADE)
-    cell = models.ForeignKey(Cell, on_delete=models.CASCADE)
-    visited_at = models.DateTimeField(auto_now_add=True)
-    
-    class Meta:
-        ordering = ['-visited_at']
-        indexes = [
-            models.Index(fields=['player', 'room']),
-        ]
-    
-    def __str__(self):
-        return f"{self.player.username} visited cell {self.cell.number} in room {self.room.room_id}"

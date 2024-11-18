@@ -26,18 +26,21 @@ def game_board(request, room_id):
     
     # Get cells first
     cells = Cell.objects.all().order_by('number')
+    
+    # Create cells dictionary for template lookup
     cells_dict = {cell.number: cell for cell in cells}
     
-    # Board generation
+    # Modified board generation
     board = []
-    numbers = list(range(100, 0, -1))
+    numbers = list(range(100, 0, -1))  # 100 to 1
+    
     for i in range(10):
         row = numbers[i * 10:(i + 1) * 10]
-        if i % 2 == 0:
-            row = list(reversed(row))
+        if i % 2 == 0:  # Changed condition to make it consistent
+            row = list(reversed(row))  # Explicitly convert to list
         board.append(list(row))
     
-    # Get player positions
+    # Get or create player positions
     positions = {}
     for player in room.players.all():
         position, _ = PlayerPosition.objects.get_or_create(
@@ -46,6 +49,65 @@ def game_board(request, room_id):
             defaults={'position': 1}
         )
         positions[player.id] = position.position
+    
+    # Handle dice roll
+    if request.method == 'POST' and request.POST.get('roll'):
+        if room.current_turn == request.user:
+            dice_roll, timestamp = generate_dice_roll()
+            player_position = PlayerPosition.objects.get(room=room, player=request.user)
+            new_position = player_position.position + dice_roll
+            
+            # Store the new position in session for content visibility
+            request.session[f'last_move_{room_id}'] = {
+                'position': new_position,
+                'timestamp': time.time()
+            }
+            
+            # Update position logic
+            if 94 <= player_position.position <= 99:
+                if new_position > 100:
+                    new_position = player_position.position
+                elif new_position == 100:
+                    new_position = 1
+            elif new_position > 100:
+                new_position = 1
+            
+            # Get current cell for history
+            current_cell = cells.filter(number=new_position).first()
+            
+            # Update player position
+            player_position.position = new_position
+            player_position.save()
+            
+            # Add cell history
+            if current_cell:
+                CellHistory.objects.create(
+                    player=request.user,
+                    room=room,
+                    cell=current_cell
+                )
+            
+            # Update turn
+            player_list = list(room.players.all())
+            current_index = player_list.index(request.user)
+            next_index = (current_index + 1) % len(player_list)
+            room.current_turn = player_list[next_index]
+            room.save()
+            
+            cells_dict = {}
+            for cell in cells:
+                cells_dict[cell.number] = cell
+            
+            context = {
+                'room': room,
+                'board': board,
+                'cells': cells_dict,  # Pass the dictionary instead of queryset
+                'players': room.players.all(),
+                'current_turn': room.current_turn,
+                'positions': positions,
+                'visible_cells': visible_cells,
+            }
+            return render(request, 'game_board.html', context)
     
     # Create visible cells
     visible_cells = {}
@@ -60,48 +122,7 @@ def game_board(request, room_id):
                 'expires': current_time + 30
             }
     
-    # Handle dice roll
-    if request.method == 'POST' and request.POST.get('roll'):
-        if room.current_turn == request.user:
-            dice_roll, timestamp = generate_dice_roll()
-            player_position = PlayerPosition.objects.get(room=room, player=request.user)
-            new_position = player_position.position + dice_roll
-            
-            # Update position logic
-            if 94 <= player_position.position <= 99:
-                if new_position > 100:
-                    new_position = player_position.position
-                elif new_position == 100:
-                    new_position = 1
-            elif new_position > 100:
-                new_position = 1
-            
-            # Update position and history
-            current_cell = cells_dict.get(new_position)
-            if current_cell:
-                player_position.position = new_position
-                player_position.save()
-                positions[request.user.id] = new_position
-                
-                CellHistory.objects.create(
-                    player=request.user,
-                    room=room,
-                    cell=current_cell
-                )
-                
-                visible_cells[new_position] = {
-                    'content': current_cell.content,
-                    'timestamp': time.time(),
-                    'expires': time.time() + 30
-                }
-            
-            # Update turn
-            player_list = list(room.players.all())
-            current_index = player_list.index(request.user)
-            next_index = (current_index + 1) % len(player_list)
-            room.current_turn = player_list[next_index]
-            room.save()
-    
+    # Create context once
     context = {
         'room': room,
         'board': board,

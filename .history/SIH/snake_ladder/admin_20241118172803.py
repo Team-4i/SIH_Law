@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cell, GameRoom, PlayerPosition, CellHistory
+from .models import Cell, GameRoom, PlayerPosition
 
 
 @admin.register(Cell)
@@ -21,11 +21,4 @@ class PlayerPositionAdmin(admin.ModelAdmin):
     list_display = ('player', 'room', 'position')
     list_filter = ('room',)
     search_fields = ('player__username',)
-
-@admin.register(CellHistory)
-class CellHistoryAdmin(admin.ModelAdmin):
-    list_display = ('player', 'room', 'cell', 'visited_at')
-    list_filter = ('room', 'player', 'visited_at')
-    search_fields = ('player__username', 'cell__number')
-    date_hierarchy = 'visited_at'
 
