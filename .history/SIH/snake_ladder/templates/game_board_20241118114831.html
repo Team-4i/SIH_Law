@@ -56,7 +56,11 @@
                                 
                                 <span class="absolute top-0 left-0 text-[8px] md:text-xs font-bold p-0.5">{{ cell_number }}</span>
                                 
-                                
+                                {% if cell_number == current_position and visible_cells|get_item:cell_number %}
+                                    <div class="absolute bg-white p-2 rounded shadow-lg z-10 w-32 md:w-48 text-xs md:text-sm cell-content">
+                                        {{ cell.content }}
+                                    </div>
+                                {% endif %}
                                 
                                 <!-- Player pawns rendering -->
                             </div>
@@ -69,130 +73,73 @@
     </div>
 </div>
 <div id="content-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full mx-4">
-        <div class="text-xl font-bold mb-4">Educational Content</div>
-        <div id="modal-content" class="text-gray-700 mb-4 text-lg"></div>
-        <div class="flex justify-between items-center">
-            <span id="timer" class="text-gray-500"></span>
-            <button onclick="document.getElementById('content-modal').classList.add('hidden')" 
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
-                Close
-            </button>
+    <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="text-xl font-bold mb-4">Cell Content</div>
+        <div id="modal-content" class="text-gray-700 mb-4"></div>
+        <div class="text-right">
+            <span id="timer" class="text-gray-500 mr-4"></span>
         </div>
     </div>
 </div>
 <script>
-// Add this CSS at the top of your script section
-const style = document.createElement('style');
-style.textContent = `
-    .player-pawn {
-        transition: all 0.3s ease-in-out;
-    }
-    .highlight-turn {
-        transition: background-color 0.3s ease;
-    }
-`;
-document.head.appendChild(style);
-
-// Replace the existing updateGameState interval setup
-let lastUpdateTime = 0;
-const UPDATE_INTERVAL = 500; // 500ms interval
-
-function smoothUpdate() {
-    const currentTime = Date.now();
-    if (currentTime - lastUpdateTime >= UPDATE_INTERVAL) {
-        updateGameState();
-        lastUpdateTime = currentTime;
-    }
-    requestAnimationFrame(smoothUpdate);
-}
-
-// Start smooth updates when document loads
-document.addEventListener('DOMContentLoaded', function() {
-    localStorage.removeItem('shownContents');
-    requestAnimationFrame(smoothUpdate);
-});
-
 function updateGameState() {
     fetch('{% url "snake_ladder:game_state" room.room_id %}')
         .then(response => response.json())
         .then(data => {
-            requestAnimationFrame(() => {
-                updateTurnIndicator(data);
-                updatePlayerList(data);
-                updateRollButton(data);
-                updatePawnPositions(data);
-                updateCellContents(data);
+            // Update current turn indicator
+            document.querySelector('.text-lg.font-semibold.text-blue-600').textContent = 
+                `Current Turn: ${data.current_turn_username}`;
+            
+            // Update player list and positions
+            const playerList = document.querySelector('.space-y-2');
+            data.players.forEach(player => {
+                const playerElement = playerList.querySelector(`[data-player-id="${player.id}"]`);
+                if (playerElement) {
+                    const positionSpan = playerElement.querySelector('.position-span');
+                    positionSpan.textContent = `Position: ${player.position}`;
+                    
+                    // Update current turn highlighting
+                    if (player.id === data.current_turn) {
+                        playerElement.classList.add('bg-blue-100', 'border', 'border-blue-300');
+                    } else {
+                        playerElement.classList.remove('bg-blue-100', 'border', 'border-blue-300');
+                    }
+                }
             });
-        })
-        .catch(error => console.error('Error:', error));
+
+            // Clear and update pawns
+            document.querySelectorAll('[data-cell]').forEach(cell => {
+                const pawns = cell.querySelectorAll('.absolute.inset-0');
+                pawns.forEach(pawn => pawn.remove());
+            });
+            
+            // Add new pawns
+            Object.entries(data.positions).forEach(([playerId, position]) => {
+                const newCell = document.querySelector(`[data-cell="${position}"]`);
+                if (newCell) {
+                    const playerColor = newCell.getAttribute(`data-color-${playerId}`);
+                    const playerName = newCell.getAttribute(`data-player-name-${playerId}`);
+                    const pawn = `<div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-4 h-4 bg-${playerColor} rounded-full" 
+                             title="${playerName}"
+                             data-player="${playerId}">
+                        </div>
+                    </div>`;
+                    newCell.insertAdjacentHTML('beforeend', pawn);
+                }
+            });
+            
+            // Update roll button state
+            const rollButton = document.querySelector('button[name="roll"]');
+            rollButton.disabled = (data.current_turn !== {{ user.id }});
+
+            // Update cell contents
+            updateCellContents(data);
+        });
 }
 
-function updateTurnIndicator(data) {
-    const turnIndicator = document.querySelector('.text-lg.font-semibold.text-blue-600');
-    if (turnIndicator && turnIndicator.textContent !== `Current Turn: ${data.current_turn_username}`) {
-        turnIndicator.textContent = `Current Turn: ${data.current_turn_username}`;
-    }
-}
-
-function updatePlayerList(data) {
-    const playerElements = document.querySelectorAll('[data-player-id]');
-    playerElements.forEach(playerElement => {
-        const playerId = playerElement.getAttribute('data-player-id');
-        
-        // Update position only if changed
-        const positionSpan = playerElement.querySelector('.position-span');
-        const newPosition = `Position: ${data.positions[playerId]}`;
-        if (positionSpan && positionSpan.textContent !== newPosition) {
-            positionSpan.textContent = newPosition;
-        }
-        
-        // Update turn highlighting
-        const shouldHighlight = data.current_turn === parseInt(playerId);
-        playerElement.classList.toggle('highlight-turn', shouldHighlight);
-        playerElement.classList.toggle('bg-blue-100', shouldHighlight);
-        playerElement.classList.toggle('border', shouldHighlight);
-        playerElement.classList.toggle('border-blue-300', shouldHighlight);
-    });
-}
-
-function updateRollButton(data) {
-    const rollButton = document.querySelector('button[name="roll"]');
-    if (rollButton) {
-        const shouldBeDisabled = (data.current_turn !== {{ user.id }});
-        if (rollButton.disabled !== shouldBeDisabled) {
-            rollButton.disabled = shouldBeDisabled;
-        }
-    }
-}
-
-function updatePawnPositions(data) {
-    data.players.forEach(player => {
-        const position = data.positions[player.id];
-        const cell = document.querySelector(`[data-cell="${position}"]`);
-        
-        // Check if pawn already exists
-        let pawnDiv = document.querySelector(`.player-pawn[data-player-id="${player.id}"]`);
-        
-        if (!pawnDiv && cell) {
-            // Create new pawn if it doesn't exist
-            pawnDiv = document.createElement('div');
-            pawnDiv.className = 'absolute inset-0 flex items-center justify-center player-pawn';
-            pawnDiv.setAttribute('data-player-id', player.id);
-            pawnDiv.innerHTML = `
-                <div class="w-4 h-4 bg-${player.color} rounded-full" 
-                     title="${player.username}">
-                </div>`;
-            cell.appendChild(pawnDiv);
-        } else if (pawnDiv && cell) {
-            // Move existing pawn
-            cell.appendChild(pawnDiv);
-        }
-    });
-}
-
-// Update game state every 1 second (increased from 300ms to reduce server load)
-setInterval(updateGameState, 1000);
+// Update more frequently for better real-time experience
+setInterval(updateGameState, 500);
 
 // Add this to your existing JavaScript
 const cellContents = {};
@@ -203,29 +150,20 @@ function showCellContent(cellNumber, content) {
     const modalContent = document.getElementById('modal-content');
     const timer = document.getElementById('timer');
     
-    if (!modal || !modalContent || !timer) return;
-    
-    // Show the modal
-    modal.classList.remove('hidden');
     modalContent.textContent = content;
+    modal.classList.remove('hidden');
     
     let timeLeft = 30;
-    timer.textContent = `Closing in ${timeLeft}s`;
-    
     const timerInterval = setInterval(() => {
         timeLeft--;
+        timer.textContent = `Closing in ${timeLeft}s`;
+        
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             modal.classList.add('hidden');
-        } else {
-            timer.textContent = `Closing in ${timeLeft}s`;
+            delete cellContents[cellNumber];
         }
     }, 1000);
-    
-    // Store in localStorage that this content has been shown
-    const shownContents = JSON.parse(localStorage.getItem('shownContents') || '{}');
-    shownContents[cellNumber] = true;
-    localStorage.setItem('shownContents', JSON.stringify(shownContents));
 }
 
 // Add this to your updateGameState function

@@ -1,7 +1,6 @@
 from django.contrib import admin
 from .models import Cell, GameRoom, PlayerPosition
 
-
 @admin.register(Cell)
 class CellAdmin(admin.ModelAdmin):
     list_display = ('number', 'cell_type', 'destination')
@@ -22,3 +21,16 @@ class PlayerPositionAdmin(admin.ModelAdmin):
     list_filter = ('room',)
     search_fields = ('player__username',)
 
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ('cell_number', 'question_text')
+    search_fields = ('question_text', 'answer')
+    ordering = ('cell_number',)
+
+@admin.register(PlayerProgress)
+class PlayerProgressAdmin(admin.ModelAdmin):
+    list_display = ('player', 'game_room', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('player__username',)
+    date_hierarchy = 'created_at'

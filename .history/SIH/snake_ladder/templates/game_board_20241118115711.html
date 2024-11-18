@@ -56,7 +56,11 @@
                                 
                                 <span class="absolute top-0 left-0 text-[8px] md:text-xs font-bold p-0.5">{{ cell_number }}</span>
                                 
-                                
+                                {% if cell_number == current_position and visible_cells|get_item:cell_number %}
+                                    <div class="absolute bg-white p-2 rounded shadow-lg z-10 w-32 md:w-48 text-xs md:text-sm cell-content">
+                                        {{ cell.content }}
+                                    </div>
+                                {% endif %}
                                 
                                 <!-- Player pawns rendering -->
                             </div>
@@ -82,117 +86,66 @@
     </div>
 </div>
 <script>
-// Add this CSS at the top of your script section
-const style = document.createElement('style');
-style.textContent = `
-    .player-pawn {
-        transition: all 0.3s ease-in-out;
-    }
-    .highlight-turn {
-        transition: background-color 0.3s ease;
-    }
-`;
-document.head.appendChild(style);
-
-// Replace the existing updateGameState interval setup
-let lastUpdateTime = 0;
-const UPDATE_INTERVAL = 500; // 500ms interval
-
-function smoothUpdate() {
-    const currentTime = Date.now();
-    if (currentTime - lastUpdateTime >= UPDATE_INTERVAL) {
-        updateGameState();
-        lastUpdateTime = currentTime;
-    }
-    requestAnimationFrame(smoothUpdate);
-}
-
-// Start smooth updates when document loads
-document.addEventListener('DOMContentLoaded', function() {
-    localStorage.removeItem('shownContents');
-    requestAnimationFrame(smoothUpdate);
-});
-
 function updateGameState() {
     fetch('{% url "snake_ladder:game_state" room.room_id %}')
         .then(response => response.json())
         .then(data => {
-            requestAnimationFrame(() => {
-                updateTurnIndicator(data);
-                updatePlayerList(data);
-                updateRollButton(data);
-                updatePawnPositions(data);
-                updateCellContents(data);
+            // Update current turn indicator
+            document.querySelector('.text-lg.font-semibold.text-blue-600').textContent = 
+                `Current Turn: ${data.current_turn_username}`;
+            
+            // Update player list and positions
+            const playerList = document.querySelector('.space-y-2');
+            data.players.forEach(player => {
+                const playerElement = playerList.querySelector(`[data-player-id="${player.id}"]`);
+                if (playerElement) {
+                    const positionSpan = playerElement.querySelector('.position-span');
+                    positionSpan.textContent = `Position: ${player.position}`;
+                    
+                    // Update current turn highlighting
+                    if (player.id === data.current_turn) {
+                        playerElement.classList.add('bg-blue-100', 'border', 'border-blue-300');
+                    } else {
+                        playerElement.classList.remove('bg-blue-100', 'border', 'border-blue-300');
+                    }
+                }
             });
-        })
-        .catch(error => console.error('Error:', error));
+
+            // Clear existing pawns
+            document.querySelectorAll('.player-pawn').forEach(pawn => pawn.remove());
+            
+            // Add updated pawns
+            Object.entries(data.positions).forEach(([playerId, position]) => {
+                const cell = document.querySelector(`[data-cell="${position}"]`);
+                if (cell) {
+                    const player = data.players.find(p => p.id === parseInt(playerId));
+                    if (player) {
+                        const pawnDiv = document.createElement('div');
+                        pawnDiv.className = 'absolute inset-0 flex items-center justify-center player-pawn';
+                        pawnDiv.innerHTML = `<div class="w-4 h-4 bg-${player.color} rounded-full" title="${player.username}"></div>`;
+                        cell.appendChild(pawnDiv);
+                    }
+                }
+            });
+            
+            // Update roll button state
+            const rollButton = document.querySelector('button[name="roll"]');
+            rollButton.disabled = (data.current_turn !== {{ user.id }});
+
+            // Check for new cell content
+            if (data.visible_cells) {
+                Object.entries(data.visible_cells).forEach(([cellNumber, cellData]) => {
+                    if (!cellContents[cellNumber]) {
+                        cellContents[cellNumber] = true;
+                        showCellContent(cellNumber, cellData.content);
+                    }
+                });
+            }
+        });
 }
 
-function updateTurnIndicator(data) {
-    const turnIndicator = document.querySelector('.text-lg.font-semibold.text-blue-600');
-    if (turnIndicator && turnIndicator.textContent !== `Current Turn: ${data.current_turn_username}`) {
-        turnIndicator.textContent = `Current Turn: ${data.current_turn_username}`;
-    }
-}
-
-function updatePlayerList(data) {
-    const playerElements = document.querySelectorAll('[data-player-id]');
-    playerElements.forEach(playerElement => {
-        const playerId = playerElement.getAttribute('data-player-id');
-        
-        // Update position only if changed
-        const positionSpan = playerElement.querySelector('.position-span');
-        const newPosition = `Position: ${data.positions[playerId]}`;
-        if (positionSpan && positionSpan.textContent !== newPosition) {
-            positionSpan.textContent = newPosition;
-        }
-        
-        // Update turn highlighting
-        const shouldHighlight = data.current_turn === parseInt(playerId);
-        playerElement.classList.toggle('highlight-turn', shouldHighlight);
-        playerElement.classList.toggle('bg-blue-100', shouldHighlight);
-        playerElement.classList.toggle('border', shouldHighlight);
-        playerElement.classList.toggle('border-blue-300', shouldHighlight);
-    });
-}
-
-function updateRollButton(data) {
-    const rollButton = document.querySelector('button[name="roll"]');
-    if (rollButton) {
-        const shouldBeDisabled = (data.current_turn !== {{ user.id }});
-        if (rollButton.disabled !== shouldBeDisabled) {
-            rollButton.disabled = shouldBeDisabled;
-        }
-    }
-}
-
-function updatePawnPositions(data) {
-    data.players.forEach(player => {
-        const position = data.positions[player.id];
-        const cell = document.querySelector(`[data-cell="${position}"]`);
-        
-        // Check if pawn already exists
-        let pawnDiv = document.querySelector(`.player-pawn[data-player-id="${player.id}"]`);
-        
-        if (!pawnDiv && cell) {
-            // Create new pawn if it doesn't exist
-            pawnDiv = document.createElement('div');
-            pawnDiv.className = 'absolute inset-0 flex items-center justify-center player-pawn';
-            pawnDiv.setAttribute('data-player-id', player.id);
-            pawnDiv.innerHTML = `
-                <div class="w-4 h-4 bg-${player.color} rounded-full" 
-                     title="${player.username}">
-                </div>`;
-            cell.appendChild(pawnDiv);
-        } else if (pawnDiv && cell) {
-            // Move existing pawn
-            cell.appendChild(pawnDiv);
-        }
-    });
-}
-
-// Update game state every 1 second (increased from 300ms to reduce server load)
-setInterval(updateGameState, 1000);
+// Keep updating state every 500ms
+setInterval(updateGameState, 500);
 
 // Add this to your existing JavaScript
 const cellContents = {};
@@ -203,29 +156,20 @@ function showCellContent(cellNumber, content) {
     const modalContent = document.getElementById('modal-content');
     const timer = document.getElementById('timer');
     
-    if (!modal || !modalContent || !timer) return;
-    
-    // Show the modal
-    modal.classList.remove('hidden');
     modalContent.textContent = content;
+    modal.classList.remove('hidden');
     
     let timeLeft = 30;
-    timer.textContent = `Closing in ${timeLeft}s`;
-    
     const timerInterval = setInterval(() => {
         timeLeft--;
+        timer.textContent = `Closing in ${timeLeft}s`;
+        
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             modal.classList.add('hidden');
-        } else {
-            timer.textContent = `Closing in ${timeLeft}s`;
+            delete cellContents[cellNumber];
         }
     }, 1000);
-    
-    // Store in localStorage that this content has been shown
-    const shownContents = JSON.parse(localStorage.getItem('shownContents') || '{}');
-    shownContents[cellNumber] = true;
-    localStorage.setItem('shownContents', JSON.stringify(shownContents));
 }
 
 // Add this to your updateGameState function

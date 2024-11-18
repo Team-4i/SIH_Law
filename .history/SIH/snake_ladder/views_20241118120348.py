@@ -159,53 +159,37 @@ def join_room(request, room_id):
 
 @login_required
 def game_state(request, room_id):
-    try:
-        room = get_object_or_404(GameRoom, room_id=room_id)
-        room.refresh_from_db()
+    room = get_object_or_404(GameRoom, room_id=room_id)
+    positions = {}
+    visible_cells = {}
+    player_colors = room.get_player_color()
+    
+    for player in room.players.all():
+        position = PlayerPosition.objects.get(room=room, player=player).position
+        positions[player.id] = position
         
-        positions = {}
-        visible_cells = {}
-        player_colors = room.get_player_color()
-        
-        # Get fresh position data
-        for player in room.players.all():
-            position = PlayerPosition.objects.get(room=room, player=player).position
-            positions[player.id] = position
-            
-            # Only show content for the current user's position
-            if player.id == request.user.id:
-                cell = Cell.objects.filter(number=position).first()
-                if cell:
-                    # Get the last shown positions from session
-                    shown_positions = request.session.get(f'shown_positions_{room_id}', [])
-                    
-                    # Only include cell content if position hasn't been shown before
-                    if position not in shown_positions:
-                        visible_cells[position] = {
-                            'content': cell.content,
-                            'timestamp': time.time(),
-                            'expires': time.time() + 30
-                        }
-                        # Update shown positions in session
-                        shown_positions.append(position)
-                        request.session[f'shown_positions_{room_id}'] = shown_positions
-                        request.session.modified = True
-        
-        response_data = {
-            'positions': positions,
-            'current_turn': room.current_turn.id,
-            'current_turn_username': room.current_turn.username,
-            'visible_cells': visible_cells,
-            'players': [{
-                'id': player.id,
-                'username': player.username,
-                'position': positions[player.id],
-                'color': player_colors[player][0]
-            } for player in room.players.all()]
-        }
-        return JsonResponse(response_data)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        if player.id == request.user.id:
+            cell = Cell.objects.filter(number=position).first()
+            if cell:
+                visible_cells[position] = {
+                    'content': cell.content,
+                    'timestamp': time.time(),
+                    'expires': time.time() + 30
+                }
+    
+    response_data = {
+        'positions': positions,
+        'current_turn': room.current_turn.id,
+        'current_turn_username': room.current_turn.username,
+        'visible_cells': visible_cells,
+        'players': [{
+            'id': player.id,
+            'username': player.username,
+            'position': positions[player.id],
+            'color': player_colors[player][0]
+        } for player in room.players.all()]
+    }
+    return JsonResponse(response_data)
 
 @login_required
 def home(request):

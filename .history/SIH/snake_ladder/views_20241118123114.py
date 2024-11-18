@@ -161,6 +161,7 @@ def join_room(request, room_id):
 def game_state(request, room_id):
     try:
         room = get_object_or_404(GameRoom, room_id=room_id)
+        # Force database refresh to get latest state
         room.refresh_from_db()
         
         positions = {}
@@ -172,24 +173,14 @@ def game_state(request, room_id):
             position = PlayerPosition.objects.get(room=room, player=player).position
             positions[player.id] = position
             
-            # Only show content for the current user's position
             if player.id == request.user.id:
                 cell = Cell.objects.filter(number=position).first()
                 if cell:
-                    # Get the last shown positions from session
-                    shown_positions = request.session.get(f'shown_positions_{room_id}', [])
-                    
-                    # Only include cell content if position hasn't been shown before
-                    if position not in shown_positions:
-                        visible_cells[position] = {
-                            'content': cell.content,
-                            'timestamp': time.time(),
-                            'expires': time.time() + 30
-                        }
-                        # Update shown positions in session
-                        shown_positions.append(position)
-                        request.session[f'shown_positions_{room_id}'] = shown_positions
-                        request.session.modified = True
+                    visible_cells[position] = {
+                        'content': cell.content,
+                        'timestamp': time.time(),
+                        'expires': time.time() + 30
+                    }
         
         response_data = {
             'positions': positions,

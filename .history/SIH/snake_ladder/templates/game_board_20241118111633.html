@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load game_filters %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="w-full max-w-4xl p-2 md:p-4">
+        <div class="bg-white rounded-lg shadow-lg p-3 md:p-6">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex flex-col">
+                    <h1 class="text-2xl md:text-3xl font-bold text-center">Snake & Ladder Game</h1>
+                    <div class="mt-2 mb-4 text-center text-lg font-semibold text-blue-600">
+                        Current Turn: {{ current_turn.username }}
+                    </div>
+                    <div class="space-y-2">
+                        {% for player in players %}
+                            <div class="flex items-center space-x-2 p-2 rounded-lg {% if player == current_turn %}bg-blue-100 border border-blue-300{% endif %}" data-player-id="{{ player.id }}">
+                                {% with color=room.get_player_color|get_item:player %}
+                                <div class="w-3 h-3 rounded-full bg-{{ color.0 }}"></div>
+                                <span class="text-sm">
+                                    {{ player.username }}
+                                    {% if player == current_turn %}
+                                        <span class="font-bold text-blue-600">(Current Turn)</span>
+                                    {% endif %}
+                                    - <span class="position-span">Position: {{ positions|get_item:player.id }}</span>
+                                </span>
+                                {% endwith %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <form method="post" class="flex items-center space-x-4">
+                    {% csrf_token %}
+                    <button type="submit" name="roll" value="true"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                            {% if current_turn != user %}disabled{% endif %}>
+                        Roll Dice
+                    </button>
+                </form>
+            </div>
+            
+            <div class="aspect-square w-full">
+                <div class="grid grid-cols-10 gap-0.5 md:gap-1 bg-blue-100 p-2 md:p-4 rounded-lg h-full">
+                    {% for row in board %}
+                        {% for cell_number in row %}
+                            {% with cell=cells|get_item:cell_number %}
+                            <div class="relative aspect-square border border-gray-300
+                                      {% if cell.cell_type == 'SNAKE' %}
+                                          bg-red-200
+                                      {% elif cell.cell_type == 'LADDER' %}
+                                          bg-green-200
+                                      {% else %}
+                                          bg-white
+                                      {% endif %}
+                                      hover:bg-gray-100 transition-colors
+                                      flex items-center justify-center
+                                      cursor-pointer group"
+                                 data-cell="{{ cell_number }}"
+                                 {% for player in players %}
+                                     {% with color=room.get_player_color|get_item:player %}
+                                         data-color-{{ player.id }}="{{ color.0 }}"
+                                         data-player-name-{{ player.id }}="{{ player.username }}"
+                                     {% endwith %}>
+                                <span class="absolute top-0 left-0 text-[8px] md:text-xs font-bold p-0.5">{{ cell_number }}</span>
+                                {% for player in players %}
+                                    {% with position=positions|get_item:player.id color=room.get_player_color|get_item:player %}
+                                        {% if cell_number == position %}
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <div class="w-4 h-4 bg-{{ color.0 }} rounded-full" 
+                                                     title="{{ player.username }}">
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endfor %}
+                                <div class="hidden group-hover:block absolute bg-white p-2 rounded shadow-lg z-10 w-32 md:w-48 text-xs md:text-sm">
+                                    {% if cell %}
+                                        {{ cell.content|truncatewords:20 }}
+                                    {% else %}
+                                        No content available
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endwith %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function updateGameState() {
+    fetch('{% url "snake_ladder:game_state" room.room_id %}')
+        .then(response => response.json())
+        .then(data => {
+            // Update current turn indicator
+            document.querySelector('.text-lg.font-semibold.text-blue-600').textContent = 
+                `Current Turn: ${data.current_turn_username}`;
+            
+            // Update player list and positions
+            const playerList = document.querySelector('.space-y-2');
+            data.players.forEach(player => {
+                const playerElement = playerList.querySelector(`[data-player-id="${player.id}"]`);
+                if (playerElement) {
+                    const positionSpan = playerElement.querySelector('.position-span');
+                    positionSpan.textContent = `Position: ${player.position}`;
+                    
+                    // Update current turn highlighting
+                    if (player.id === data.current_turn) {
+                        playerElement.classList.add('bg-blue-100', 'border', 'border-blue-300');
+                    } else {
+                        playerElement.classList.remove('bg-blue-100', 'border', 'border-blue-300');
+                    }
+                }
+            });
+
+            // Clear and update pawns
+            document.querySelectorAll('[data-cell]').forEach(cell => {
+                const pawns = cell.querySelectorAll('.absolute.inset-0');
+                pawns.forEach(pawn => pawn.remove());
+            });
+            
+            // Add new pawns
+            Object.entries(data.positions).forEach(([playerId, position]) => {
+                const newCell = document.querySelector(`[data-cell="${position}"]`);
+                if (newCell) {
+                    const playerColor = newCell.getAttribute(`data-color-${playerId}`);
+                    const playerName = newCell.getAttribute(`data-player-name-${playerId}`);
+                    const pawn = `<div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-4 h-4 bg-${playerColor} rounded-full" 
+                             title="${playerName}"
+                             data-player="${playerId}">
+                        </div>
+                    </div>`;
+                    newCell.insertAdjacentHTML('beforeend', pawn);
+                }
+            });
+            
+            // Update roll button state
+            const rollButton = document.querySelector('button[name="roll"]');
+            rollButton.disabled = (data.current_turn !== {{ user.id }});
+
+            // Update cell contents
+            updateCellContents(data);
+        });
+}
+
+// Update more frequently for better real-time experience
+setInterval(updateGameState, 500);
+
+// Add this to your existing JavaScript
+const cellContents = {};
+const CONTENT_VISIBILITY_DURATION = 30000; // 30 seconds
+
+function showCellContent(cellNumber, content) {
+    const cell = document.querySelector(`[data-cell="${cellNumber}"]`);
+    if (cell) {
+        const contentDiv = cell.querySelector('.cell-content');
+        if (contentDiv) {
+            contentDiv.textContent = content;
+            contentDiv.classList.remove('hidden');
+            
+            // Hide content after 30 seconds
+            setTimeout(() => {
+                contentDiv.classList.add('hidden');
+                delete cellContents[cellNumber];
+            }, CONTENT_VISIBILITY_DURATION);
+        }
+    }
+}
+
+// Add this to your updateGameState function
+function updateCellContents(data) {
+    if (data.visible_cells) {
+        Object.entries(data.visible_cells).forEach(([cellNumber, cellData]) => {
+            if (!cellContents[cellNumber]) {
+                cellContents[cellNumber] = true;
+                showCellContent(cellNumber, cellData.content);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
