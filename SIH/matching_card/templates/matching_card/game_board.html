@@ -5,6 +5,7 @@
 
 <div class="game-header">
     <h1>Article Matching Game</h1>
+    <div class="player-role">You are: <span id="playerRole" class="font-bold"></span></div>
     <div class="timer" id="timer">Time: 2:00</div>
 </div>
 
@@ -57,4 +58,9 @@
     <p id="finalScores"></p>
     <button class="draw-btn" id="playAgainButton">Play Again</button>
 </div>
+
+<script src="{% static 'js/game.js' %}"></script>
+<script>
+    const game = new CardGame('{{ room.room_id }}', '{{ request.user.id }}');
+</script>
 {% endblock %}

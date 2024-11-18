@@ -202,3 +202,14 @@ button:disabled {
         flex-direction: column;
     }
 }
+
+.player-role {
+    text-align: center;
+    margin: 10px 0;
+    font-size: 1.2em;
+    color: #2c3e50;
+}
+
+.player-role .font-bold {
+    color: #e74c3c;
+}
