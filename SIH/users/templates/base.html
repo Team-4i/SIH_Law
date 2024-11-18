@@ -3,32 +3,79 @@
 <head>
     <title>{% block title %}{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <style>
         .message {
-            color: white;
+            color: #f4e4bc;
             margin-bottom: 1rem;
+            font-family: 'Crimson Text', serif;
         }
         .user-message {
             margin-left: 20%;
-            background-color: #4B5563;
+            background-color: #8B4513;
             padding: 1rem;
             border-radius: 0.5rem;
+            border: 1px solid #4A2511;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
         .ai-message {
             margin-right: 20%;
-            background-color: #374151;
+            background-color: #6B3410;
             padding: 1rem;
             border-radius: 0.5rem;
+            border: 1px solid #4A2511;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
         #chat-container::-webkit-scrollbar {
             width: 8px;
         }
         #chat-container::-webkit-scrollbar-track {
-            background: #374151;
+            background: #8B4513;
+            border-radius: 4px;
         }
         #chat-container::-webkit-scrollbar-thumb {
-            background: #4B5563;
+            background: #4A2511;
             border-radius: 4px;
+            border: 1px solid #f4e4bc;
+        }
+        #chat-window {
+            background-image: url('/static/images/parchment-bg.jpg');
+            background-size: cover;
+            border: 2px solid #8B4513;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #chat-toggle {
+            background-color: #8B4513;
+            border: 2px solid #4A2511;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            color: #f4e4bc;
+            transition: transform 0.2s;
+        }
+        #chat-toggle:hover {
+            transform: scale(1.05);
+            background-color: #6B3410;
+        }
+        #user-input {
+            background-color: #f4e4bc;
+            border: 1px solid #8B4513;
+            color: #4A2511;
+        }
+        #user-input::placeholder {
+            color: #8B4513;
+            opacity: 0.7;
+        }
+        #chat-minimize {
+            color: #4A2511;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        #chat-minimize:hover {
+            opacity: 1;
+        }
+        .chat-header {
+            background-color: #8B4513;
+            border-bottom: 2px solid #4A2511;
+            color: #f4e4bc;
         }
     </style>
 </head>

@@ -47,9 +47,18 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-    'snake_ladder'
-    
+    'snake_ladder',
+    'matching_card',
+    'channels',
 ]
+
+ASGI_APPLICATION = 'SIH.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer'
+    }
+}
+
 
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
