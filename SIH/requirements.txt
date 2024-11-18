@@ -63,7 +63,6 @@ httpcore==1.0.6
 httplib2==0.22.0
 httpx==0.27.2
 idna==3.10
-importlib_metadata==8.2.0
 jiter==0.5.0
 jsonpatch==1.33
 jsonpointer==3.0.0
@@ -74,7 +73,6 @@ langchain-google-genai==2.0.1
 langchain-text-splitters==0.3.0
 langsmith==0.1.136
 lxml==5.3.0
-matplotlib==3.9.1
 multidict==6.0.5
 numpy==1.26.4
 oauthlib==3.2.2
@@ -104,7 +102,6 @@ PyJWT==2.9.0
 pyparsing==3.1.2
 pypdf==4.3.1
 pypng==0.20220715.0
-pyppeteer==2.0.0
 PySocks==1.7.1
 python-bidi==0.6.0
 python-dateutil==2.9.0.post0
@@ -116,12 +113,10 @@ PyYAML==6.0.2
 qrcode==7.4.2
 regex==2024.11.6
 reportlab==4.2.2
-requests==2.32.3
 requests-oauthlib==2.0.0
 requests-toolbelt==1.0.0
 rlp==4.0.1
 rsa==4.9
-selenium==4.23.1
 six==1.16.0
 sniffio==1.3.1
 social-auth-app-django==5.4.2
@@ -138,13 +133,11 @@ tqdm==4.66.5
 trio==0.26.2
 trio-websocket==0.11.1
 twilio==9.2.3
-types-requests==2.32.0.20241016
 typing_extensions==4.12.2
 tzdata==2024.2
 tzlocal==5.2
 uritemplate==4.1.1
 uritools==4.0.3
-urllib3==2.2.3
 virtualenv==20.25.1
 web3==7.5.0
 webencodings==0.5.1
