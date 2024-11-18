@@ -220,37 +220,42 @@ const cellContents = {};
 const CONTENT_VISIBILITY_DURATION = 30000; // 30 seconds
 
 function showCellContent(cellNumber, content) {
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40';
-    modal.innerHTML = `
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full mx-4">
-            <div class="text-xl font-bold mb-4">Cell ${cellNumber}</div>
-            <p class="text-gray-700">${content}</p>
-        </div>
-    `;
+    const modal = document.getElementById('content-modal');
+    const modalContent = document.getElementById('modal-content');
+    const timer = document.getElementById('timer');
     
-    document.body.appendChild(modal);
+    if (!modal || !modalContent || !timer) return;
     
-    // Remove modal after 3 seconds
-    setTimeout(() => {
-        modal.remove();
-    }, 3000);
+    // Show the modal
+    modal.classList.remove('hidden');
+    modalContent.textContent = content;
+    
+    let timeLeft = 30;
+    timer.textContent = `Closing in ${timeLeft}s`;
+    
+    const timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            modal.classList.add('hidden');
+        } else {
+            timer.textContent = `Closing in ${timeLeft}s`;
+        }
+    }, 1000);
+    
+    // Store in localStorage that this content has been shown
+    const shownContents = JSON.parse(localStorage.getItem('shownContents') || '{}');
+    shownContents[cellNumber] = true;
+    localStorage.setItem('shownContents', JSON.stringify(shownContents));
 }
 
+// Add this to your updateGameState function
 function updateCellContents(data) {
     if (data.visible_cells) {
         Object.entries(data.visible_cells).forEach(([cellNumber, cellData]) => {
             if (!cellContents[cellNumber]) {
                 cellContents[cellNumber] = true;
                 showCellContent(cellNumber, cellData.content);
-                
-                // After showing content, if it's a snake-ladder cell, show MCQ
-                const cell = document.querySelector(`[data-cell="${cellNumber}"]`);
-                if (cell && cell.getAttribute('data-cell-type') === 'SNAKE_LADDER') {
-                    setTimeout(() => {
-                        handleSnakeLadderCell(cellNumber);
-                    }, 3500); // Show MCQ after cell content disappears
-                }
             }
         });
     }

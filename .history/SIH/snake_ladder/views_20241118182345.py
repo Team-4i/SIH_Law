@@ -163,48 +163,47 @@ def game_state(request, room_id):
         room = get_object_or_404(GameRoom, room_id=room_id)
         room.refresh_from_db()
         
-        # If no current turn is set, set it to the first player
-        if not room.current_turn and room.players.exists():
-            room.current_turn = room.players.first()
-            room.save()
-        
         positions = {}
         visible_cells = {}
         player_colors = room.get_player_color()
-        players_data = []
         
         # Get fresh position data
         for player in room.players.all():
             position = PlayerPosition.objects.get(room=room, player=player).position
             positions[player.id] = position
             
-            # Show cell content for current user's position
+            # Only show content for the current user's position
             if player.id == request.user.id:
                 cell = Cell.objects.filter(number=position).first()
                 if cell:
-                    visible_cells[position] = {
-                        'content': cell.content,
-                        'timestamp': time.time(),
-                        'expires': time.time() + 30
-                    }
-            
-            # Add player data including color
-            color = player_colors.get(player, ('gray-500', 'Gray'))[0]
-            players_data.append({
+                    # Get the last shown positions from session
+                    shown_positions = request.session.get(f'shown_positions_{room_id}', [])
+                    
+                    # Only include cell content if position hasn't been shown before
+                    if position not in shown_positions:
+                        visible_cells[position] = {
+                            'content': cell.content,
+                            'timestamp': time.time(),
+                            'expires': time.time() + 30
+                        }
+                        # Update shown positions in session
+                        shown_positions.append(position)
+                        request.session[f'shown_positions_{room_id}'] = shown_positions
+                        request.session.modified = True
+        
+        response_data = {
+            'positions': positions,
+            'current_turn': room.current_turn.id,
+            'current_turn_username': room.current_turn.username,
+            'visible_cells': visible_cells,
+            'players': [{
                 'id': player.id,
                 'username': player.username,
-                'color': color,
-                'is_current_turn': player.id == room.current_turn.id if room.current_turn else False
-            })
-
-        return JsonResponse({
-            'current_turn': room.current_turn.id if room.current_turn else None,
-            'current_turn_username': room.current_turn.username if room.current_turn else '',
-            'positions': positions,
-            'visible_cells': visible_cells,
-            'players': players_data,
-            'current_user_id': request.user.id
-        })
+                'position': positions[player.id],
+                'color': player_colors[player][0]
+            } for player in room.players.all()]
+        }
+        return JsonResponse(response_data)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 

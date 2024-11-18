@@ -178,16 +178,6 @@ def game_state(request, room_id):
             position = PlayerPosition.objects.get(room=room, player=player).position
             positions[player.id] = position
             
-            # Show cell content for current user's position
-            if player.id == request.user.id:
-                cell = Cell.objects.filter(number=position).first()
-                if cell:
-                    visible_cells[position] = {
-                        'content': cell.content,
-                        'timestamp': time.time(),
-                        'expires': time.time() + 30
-                    }
-            
             # Add player data including color
             color = player_colors.get(player, ('gray-500', 'Gray'))[0]
             players_data.append({
