@@ -180,11 +180,6 @@ function updatePawnPositions(data) {
         const position = data.positions[player.id];
         const cell = document.querySelector(`[data-cell="${position}"]`);
         
-        if (cell && cell.getAttribute('data-cell-type') === 'SNAKE_LADDER' 
-            && player.id === {{ user.id }}) {
-            handleSnakeLadderCell(position);
-        }
-        
         // Check if pawn already exists
         let pawnDiv = document.querySelector(`.player-pawn[data-player-id="${player.id}"]`);
         
@@ -252,66 +247,6 @@ function updateCellContents(data) {
             }
         });
     }
-}
-
-let mcqShown = false;
-let lastMcqPosition = null;
-
-function handleSnakeLadderCell(position) {
-    if (mcqShown || lastMcqPosition === position) return;
-    
-    mcqShown = true;
-    lastMcqPosition = position;
-    
-    const modal = document.getElementById('mcq-modal');
-    const loading = document.getElementById('mcq-loading');
-    const content = document.getElementById('mcq-content');
-    const question = document.getElementById('mcq-question');
-    const options = document.getElementById('mcq-options');
-    const result = document.getElementById('mcq-result');
-    
-    modal.classList.remove('hidden');
-    loading.classList.remove('hidden');
-    content.classList.add('hidden');
-    result.classList.add('hidden');
-    
-    fetch(`/game/generate-mcq/{{ room.room_id }}/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            loading.classList.add('hidden');
-            content.classList.remove('hidden');
-            
-            question.textContent = data.question;
-            options.innerHTML = data.options.map(option => `
-                <button onclick="checkAnswer('${option[0]}', '${data.correct}')"
-                        class="w-full text-left p-2 rounded hover:bg-blue-100">
-                    ${option}
-                </button>
-            `).join('');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            mcqShown = false;
-        });
-}
-
-function checkAnswer(selected, correct) {
-    const result = document.getElementById('mcq-result');
-    result.classList.remove('hidden');
-    
-    if (selected === correct) {
-        result.innerHTML = '<p class="text-green-600 font-bold">Correct!</p>';
-    } else {
-        result.innerHTML = '<p class="text-red-600 font-bold">Wrong answer.</p>';
-    }
-    
-    setTimeout(() => {
-        document.getElementById('mcq-modal').classList.add('hidden');
-        mcqShown = false;
-    }, 2000);
 }
 </script>
 {% endblock %}

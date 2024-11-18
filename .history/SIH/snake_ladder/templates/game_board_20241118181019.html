@@ -254,15 +254,7 @@ function updateCellContents(data) {
     }
 }
 
-let mcqShown = false;
-let lastMcqPosition = null;
-
-function handleSnakeLadderCell(position) {
-    if (mcqShown || lastMcqPosition === position) return;
-    
-    mcqShown = true;
-    lastMcqPosition = position;
-    
+function handleSnakeLadderCell(cellNumber) {
     const modal = document.getElementById('mcq-modal');
     const loading = document.getElementById('mcq-loading');
     const content = document.getElementById('mcq-content');
@@ -278,9 +270,6 @@ function handleSnakeLadderCell(position) {
     fetch(`/game/generate-mcq/{{ room.room_id }}/`)
         .then(response => response.json())
         .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
             loading.classList.add('hidden');
             content.classList.remove('hidden');
             
@@ -291,10 +280,6 @@ function handleSnakeLadderCell(position) {
                     ${option}
                 </button>
             `).join('');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            mcqShown = false;
         });
 }
 
@@ -310,7 +295,6 @@ function checkAnswer(selected, correct) {
     
     setTimeout(() => {
         document.getElementById('mcq-modal').classList.add('hidden');
-        mcqShown = false;
     }, 2000);
 }
 </script>

@@ -227,63 +227,31 @@ def generate_mcq(request, room_id):
     # Get cell history for the player in this room
     history = room.get_cell_history(player=player)
     
-    if not history.exists():
-        return JsonResponse({
-            "question": "What is the basic structure of Indian Constitution?",
-            "options": [
-                "A) Federal System",
-                "B) Unitary System",
-                "C) Presidential System",
-                "D) Parliamentary System"
-            ],
-            "correct": "A"
-        })
-    
     # Format the history for Gemini
     history_text = "\n".join([
         f"Cell {h.cell.number}: {h.cell.content}" 
-        for h in history[:5]
+        for h in history[:5]  # Last 5 cells visited
     ])
     
+    # Configure Gemini
+    genai.configure(api_key='AIzaSyA8GHU0QhwXkgCXEBYnost56YOPmsd2pPs')
+    model = genai.GenerativeModel('gemini-pro')
+    
+    prompt = f"""
+    Based on these facts about Indian Constitution:
+    {history_text}
+    
+    Generate a multiple choice question with 4 options and mark the correct answer.
+    Format: JSON
+    {{
+        "question": "question text",
+        "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
+        "correct": "A"
+    }}
+    """
+    
     try:
-        genai.configure(api_key='AIzaSyA8GHU0QhwXkgCXEBYnost56YOPmsd2pPs')
-        model = genai.GenerativeModel('gemini-pro')
-        
-        response = model.generate_content(
-            f"""Based on these facts about Indian Constitution:
-            {history_text}
-            Create a multiple choice question. Return only valid JSON in this exact format:
-            {{"question": "your question", "options": ["A) option1", "B) option2", "C) option3", "D) option4"], "correct": "A"}}"""
-        )
-        
-        # Parse response and validate format
-        try:
-            data = eval(response.text)
-            if not all(key in data for key in ['question', 'options', 'correct']):
-                raise ValueError("Invalid response format")
-            return JsonResponse(data)
-        except:
-            # Fallback response if parsing fails
-            return JsonResponse({
-                "question": "What type of democracy is India?",
-                "options": [
-                    "A) Parliamentary Democracy",
-                    "B) Presidential Democracy",
-                    "C) Direct Democracy",
-                    "D) Authoritarian Democracy"
-                ],
-                "correct": "A"
-            })
-            
+        response = model.generate_content(prompt)
+        return JsonResponse(eval(response.text))
     except Exception as e:
-        return JsonResponse({
-            "error": str(e),
-            "question": "What is the fundamental right of Indian citizens?",
-            "options": [
-                "A) Right to Equality",
-                "B) Right to Property",
-                "C) Right to Farm",
-                "D) Right to Drive"
-            ],
-            "correct": "A"
-        })
+        return JsonResponse({'error': str(e)}, status=400)

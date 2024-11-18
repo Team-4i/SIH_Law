@@ -254,14 +254,11 @@ function updateCellContents(data) {
     }
 }
 
-let mcqShown = false;
-let lastMcqPosition = null;
+let mcqShown = false;  // Add at the top with other variables
 
-function handleSnakeLadderCell(position) {
-    if (mcqShown || lastMcqPosition === position) return;
-    
+function handleSnakeLadderCell(cellNumber) {
+    if (mcqShown) return;  // Don't show if already displayed
     mcqShown = true;
-    lastMcqPosition = position;
     
     const modal = document.getElementById('mcq-modal');
     const loading = document.getElementById('mcq-loading');
@@ -278,9 +275,6 @@ function handleSnakeLadderCell(position) {
     fetch(`/game/generate-mcq/{{ room.room_id }}/`)
         .then(response => response.json())
         .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
-            }
             loading.classList.add('hidden');
             content.classList.remove('hidden');
             
@@ -291,10 +285,6 @@ function handleSnakeLadderCell(position) {
                     ${option}
                 </button>
             `).join('');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            mcqShown = false;
         });
 }
 
@@ -310,7 +300,7 @@ function checkAnswer(selected, correct) {
     
     setTimeout(() => {
         document.getElementById('mcq-modal').classList.add('hidden');
-        mcqShown = false;
+        mcqShown = false;  // Reset the flag after hiding
     }, 2000);
 }
 </script>
