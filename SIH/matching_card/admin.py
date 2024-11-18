@@ -5,8 +5,8 @@ from .models import GameRoom, Article, PlayerHand
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('number', 'title')
-    search_fields = ('number', 'title', 'description')
+    list_display = ('article_number', 'case_name', 'year')
+    search_fields = ('article_number', 'case_name', 'description')
 
 admin.site.register(GameRoom)
 admin.site.register(PlayerHand)

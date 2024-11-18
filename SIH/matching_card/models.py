@@ -13,12 +13,13 @@ class GameRoom(models.Model):
         return f"Card Room by {self.creator.username}"
     
 class Article(models.Model):
-    number = models.IntegerField(unique=True)
-    title = models.CharField(max_length=200)
-    description = models.TextField()
+    article_number = models.CharField(max_length=10, default='0')
+    case_name = models.CharField(max_length=200, default='')
+    year = models.CharField(max_length=10, default='')
+    description = models.TextField(default='')
     
     def __str__(self):
-        return f"Article {self.number}: {self.title}"
+        return f"{self.case_name} ({self.year}) - Article {self.article_number}"
 
 class PlayerHand(models.Model):
     player = models.ForeignKey(User, on_delete=models.CASCADE)

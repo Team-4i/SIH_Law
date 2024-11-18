@@ -59,6 +59,13 @@
                         window.location.href = `/game/join/${roomId}/`;
                     }
                 }
+
+                function joinCardRoom() {
+                    const roomId = prompt("Enter Room ID:");
+                    if (roomId) {
+                        window.location.href = `/matching-card/join/${roomId}/`;
+                    }
+                }
             </script>
         {% else %}
             <div class="text-center">

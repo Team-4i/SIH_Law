@@ -85,12 +85,15 @@ class GameConsumer(AsyncWebsocketConsumer):
         room = GameRoom.objects.get(room_id=self.room_id)
         articles = list(Article.objects.all())
         
+        if not articles:
+            raise ValueError("No articles found in the database")
+        
         # Clear existing hands
         PlayerHand.objects.filter(game_room=room).delete()
         
         # Create new hands for each player
         for player in room.players.all():
-            player_articles = random.sample(articles, 7)
+            player_articles = random.sample(articles, min(7, len(articles)))
             hand = PlayerHand.objects.create(
                 player=player,
                 game_room=room
@@ -102,21 +105,24 @@ class GameConsumer(AsyncWebsocketConsumer):
         room = GameRoom.objects.get(room_id=self.room_id)
         players_data = []
         
-        # Get creator (Player 1) first
         creator = room.creator
         creator_hand = PlayerHand.objects.get(player=creator, game_room=room)
         players_data.append({
             'id': creator.id,
             'username': creator.username,
             'cards': [
-                {'number': article.number, 'title': article.title}
+                {
+                    'article_number': article.article_number,
+                    'case_name': article.case_name,
+                    'year': article.year,
+                    'description': article.description
+                }
                 for article in creator_hand.articles.all()
             ],
             'score': creator_hand.score,
             'isCreator': True
         })
         
-        # Get other player (Player 2)
         other_player = room.players.exclude(id=creator.id).first()
         if other_player:
             other_hand = PlayerHand.objects.get(player=other_player, game_room=room)
@@ -124,7 +130,12 @@ class GameConsumer(AsyncWebsocketConsumer):
                 'id': other_player.id,
                 'username': other_player.username,
                 'cards': [
-                    {'number': article.number, 'title': article.title}
+                    {
+                        'article_number': article.article_number,
+                        'case_name': article.case_name,
+                        'year': article.year,
+                        'description': article.description
+                    }
                     for article in other_hand.articles.all()
                 ],
                 'score': other_hand.score,

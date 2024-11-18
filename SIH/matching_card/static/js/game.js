@@ -4,6 +4,7 @@ class CardGame {
         this.playerId = playerId;
         this.currentCard = null;
         this.isPlayer1 = false;
+        this.timer = new Timer(120, document.getElementById('timer'));
         this.setupWebSocket();
         this.setupEventListeners();
     }
@@ -26,12 +27,18 @@ class CardGame {
         switch(data.action) {
             case 'game_started':
                 this.renderGameState(data.state);
+                this.timer.start();
+                document.getElementById('startButton')?.remove();
                 break;
             case 'card_drawn':
                 this.showDrawnCard(data.card);
                 break;
             case 'turn_changed':
                 this.updateTurn(data.current_player);
+                break;
+            case 'game_over':
+                this.timer.stop();
+                this.showGameOver(data.results);
                 break;
         }
     }
@@ -63,10 +70,15 @@ class CardGame {
     renderHand(containerId, cards) {
         const container = document.getElementById(containerId);
         container.innerHTML = '';
+        
         cards.forEach(card => {
             const cardElement = document.createElement('div');
             cardElement.className = 'card';
-            cardElement.textContent = `Article ${card.number}`;
+            cardElement.innerHTML = `
+                <h3>${card.case_name} (${card.year})</h3>
+                <p>Article ${card.article_number}</p>
+                <p>${card.description}</p>
+            `;
             container.appendChild(cardElement);
         });
     }
@@ -109,5 +121,51 @@ class CardGame {
             player_id: this.playerId,
             card: this.currentCard
         }));
+    }
+
+    showGameOver(results) {
+        const gameOver = document.getElementById('gameOver');
+        const winner = document.getElementById('winner');
+        const finalScores = document.getElementById('finalScores');
+        
+        gameOver.classList.remove('hidden');
+        winner.textContent = `Winner: ${results.winner}`;
+        finalScores.textContent = `Final Scores - Player 1: ${results.scores.player1}, Player 2: ${results.scores.player2}`;
+    }
+}
+
+class Timer {
+    constructor(duration, display) {
+        this.duration = duration;
+        this.display = display;
+        this.running = false;
+        this.remainingTime = duration;
+    }
+
+    start() {
+        if (this.running) return;
+        this.running = true;
+        this.tick();
+    }
+
+    tick() {
+        if (!this.running) return;
+        
+        const minutes = Math.floor(this.remainingTime / 60);
+        const seconds = this.remainingTime % 60;
+        
+        this.display.textContent = `Time: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        
+        if (this.remainingTime <= 0) {
+            this.stop();
+            return;
+        }
+        
+        this.remainingTime--;
+        setTimeout(() => this.tick(), 1000);
+    }
+
+    stop() {
+        this.running = false;
     }
 }
