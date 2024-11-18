@@ -4,24 +4,50 @@
 {% block content %}
 {% load socialaccount %}
 
-<div class="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
-    <div class="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 class="text-2xl font-bold text-center mb-6">Welcome to LawBot</h2>
+<div class="min-h-screen bg-[url('/static/images/parchment-bg.jpg')] bg-cover flex flex-col justify-center items-center">
+    <div class="bg-[#f4e4bc] p-12 rounded-lg shadow-2xl w-[28rem] border-4 border-[#8B4513] relative overflow-hidden">
+        <!-- Decorative Corner Elements -->
+        <div class="absolute top-0 left-0 w-16 h-16 border-l-4 border-t-4 border-[#8B4513]"></div>
+        <div class="absolute top-0 right-0 w-16 h-16 border-r-4 border-t-4 border-[#8B4513]"></div>
+        <div class="absolute bottom-0 left-0 w-16 h-16 border-l-4 border-b-4 border-[#8B4513]"></div>
+        <div class="absolute bottom-0 right-0 w-16 h-16 border-r-4 border-b-4 border-[#8B4513]"></div>
+
+        <h2 class="text-3xl font-serif text-center mb-8 text-[#4A2511] leading-tight">
+            नागरिक और संविधान
+            <span class="block text-xl mt-2">Nagarik aur Samvidhaan</span>
+        </h2>
         
         {% if user.is_authenticated %}
-            <div class="text-center space-y-4">
-                <p class="mb-4">Welcome, {{ user.username }}!</p>
+            <div class="text-center space-y-6">
+                <p class="mb-6 text-lg font-serif text-[#4A2511]">Welcome, {{ user.username }}!</p>
+                
                 <a href="{% url 'snake_ladder:create_room' %}" 
-                   class="block bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded transition-colors mb-4">
-                    Create Game Room
+                   class="block bg-[#8B4513] hover:bg-[#6B3410] text-[#f4e4bc] font-serif py-3 px-6 rounded-lg transition-colors mb-6 shadow-md transform hover:scale-105 duration-200">
+                    Create Snake Ladder Game Room
                 </a>
+                
                 <a href="#" 
-                   class="block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors mb-4"
+                   class="block bg-[#4A2511] hover:bg-[#3A1D0E] text-[#f4e4bc] font-serif py-3 px-6 rounded-lg transition-colors mb-6 shadow-md transform hover:scale-105 duration-200"
                    onclick="joinRoom()">
-                    Join Game Room
+                    Join Snake Ladder Game Room
                 </a>
+                <!-- Matching Card Game Options -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-serif text-[#4A2511] mb-4">Matching Cards</h3>
+                    <a href="{% url 'matching_card:create_room' %}" 
+                       class="block bg-[#8B4513] hover:bg-[#6B3410] text-[#f4e4bc] font-serif py-3 px-6 rounded-lg transition-colors mb-4 shadow-md transform hover:scale-105 duration-200">
+                        Create Card Game Room
+                    </a>
+            
+                    <a href="#" 
+                       class="block bg-[#4A2511] hover:bg-[#3A1D0E] text-[#f4e4bc] font-serif py-3 px-6 rounded-lg transition-colors mb-6 shadow-md transform hover:scale-105 duration-200"
+                       onclick="joinCardRoom()">
+                        Join Card Game Room
+                    </a>
+                </div>
+                
                 <a href="{% url 'account_logout' %}" 
-                   class="block bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded transition-colors">
+                   class="block bg-[#A52A2A] hover:bg-[#8B2323] text-[#f4e4bc] font-serif py-3 px-6 rounded-lg transition-colors shadow-md transform hover:scale-105 duration-200">
                     Sign Out
                 </a>
             </div>
@@ -36,9 +62,9 @@
             </script>
         {% else %}
             <div class="text-center">
-                <p class="mb-4">Please sign in to continue</p>
+                <p class="mb-6 text-lg font-serif text-[#4A2511]">Please sign in to continue</p>
                 <a href="{% provider_login_url 'google' %}"
-                   class="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors">
+                   class="inline-block bg-[#4A2511] hover:bg-[#3A1D0E] text-[#f4e4bc] font-serif py-3 px-6 rounded-lg transition-colors shadow-md transform hover:scale-105 duration-200">
                     Sign in with Google
                 </a>
             </div>
