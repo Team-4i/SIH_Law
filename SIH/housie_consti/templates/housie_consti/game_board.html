@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
 <div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-        <h2 class="text-2xl font-bold text-center mb-6">Housie Game Room</h2>
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-3xl w-full">
+        <h2 class="text-3xl font-bold text-center mb-6 historic-title">Housie Game Room</h2>
         
         <div class="space-y-4">
             <div class="text-center text-lg">
-                Game has started!
+                <p class="font-semibold">Current Case:</p>
+                <div class="case-display">
+                    <h3 id="currentCase" class="case-text">Article 1: The Right to Equality</h3>
+                </div>
             </div>
             
             <div class="space-y-2">
@@ -16,6 +20,28 @@
                         <li>{{ player.username }}</li>
                     {% endfor %}
                 </ul>
+            </div>
+
+            <div class="housie-card">
+                <h3 class="font-semibold text-center">Your Housie Card</h3>
+                <div class="card-grid">
+                    <!-- Example of Housie card numbers -->
+                    <div class="card-cell">1</div>
+                    <div class="card-cell">2</div>
+                    <div class="card-cell">3</div>
+                    <div class="card-cell">4</div>
+                    <div class="card-cell">5</div>
+                    <div class="card-cell">6</div>
+                    <div class="card-cell">7</div>
+                    <div class="card-cell">8</div>
+                    <div class="card-cell">9</div>
+                    <div class="card-cell">10</div>
+                    <div class="card-cell">11</div>
+                    <div class="card-cell">12</div>
+                    <div class="card-cell">13</div>
+                    <div class="card-cell">14</div>
+                    <div class="card-cell">15</div>
+                </div>
             </div>
         </div>
     </div>

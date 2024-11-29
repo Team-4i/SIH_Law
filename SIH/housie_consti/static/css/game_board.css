@@ -1,0 +1,52 @@
+body {
+    font-family: 'Georgia', serif; /* Historic font style */
+    background-color: #f5f5dc; /* Light beige background */
+}
+
+.historic-title {
+    color: #8B4513; /* SaddleBrown color for a historic feel */
+    text-shadow: 1px 1px 2px #000; /* Subtle shadow for depth */
+}
+
+.case-display {
+    background-color: #f0e68c; /* Khaki background for the case display */
+    border: 2px solid #8B4513; /* Border color */
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.case-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #5B3A29; /* Darker brown for text */
+}
+
+.housie-card {
+    background-color: #fff; /* White background for the card */
+    border: 2px solid #8B4513; /* Border color */
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 columns */
+    gap: 10px;
+}
+
+.card-cell {
+    background-color: #e0c68c; /* Light khaki for card cells */
+    border: 1px solid #8B4513; /* Border color */
+    border-radius: 5px;
+    text-align: center;
+    padding: 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #5B3A29; /* Darker brown for text */
+    transition: background-color 0.3s;
+}
+
+.card-cell:hover {
+    background-color: #d2b48c; /* Darker khaki on hover */
+}
