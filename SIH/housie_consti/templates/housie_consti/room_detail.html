@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+        <h2 class="text-2xl font-bold text-center mb-6">Card Game Room</h2>
+        
+        <div class="space-y-6">
+            <div class="text-center">
+                <img src="data:image/png;base64,{{ qr_code }}" 
+                     alt="Room QR Code" 
+                     class="mx-auto w-48 h-48">
+            </div>
+            
+            <div class="space-y-2">
+                <p class="text-sm text-gray-600">Share this link with a friend:</p>
+                <div class="flex space-x-2">
+                    <input type="text" 
+                           id="roomUrl"
+                           value="{{ room_url }}" 
+                           class="w-full p-2 border rounded bg-gray-50" 
+                           readonly>
+                    <button onclick="copyToClipboard()"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 rounded transition-colors">
+                        Copy
+                    </button>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <p class="text-sm text-gray-600">Room ID:</p>
+                <div class="flex space-x-2">
+                    <input type="text" 
+                           id="roomId"
+                           value="{{ room.room_id }}" 
+                           class="w-full p-2 border rounded bg-gray-50" 
+                           readonly>
+                    <button onclick="copyRoomId()"
+                            class="bg-blue-500 hover:bg-blue-600 text-white px-4 rounded transition-colors">
+                        Copy
+                    </button>
+                </div>
+            </div>
+            
+            <div class="space-y-2">
+                <p class="font-semibold">Players (<span id="player-count">{{ room.players.count }}</span>/2):</p>
+                <ul class="list-disc pl-5" id="players-list">
+                    {% for player in room.players.all %}
+                        <li data-player-id="{{ player.id }}">{{ player.username }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div id="room-status" class="text-center font-semibold">
+                {% if room.players.count == 2 %}
+                    <div class="text-center text-green-600 font-semibold">
+                        Room is full! Game can begin.
+                    </div>
+                    <a href="{% url 'matching_card:game_board' room.room_id %}" 
+                       class="block w-full bg-green-500 hover:bg-green-600 text-white text-center font-semibold py-2 px-4 rounded mt-4 transition-colors">
+                        Start Game
+                    </a>
+                {% else %}
+                <div class="text-center text-yellow-600 font-semibold">
+                    Waiting for another player...
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // WebSocket Connection
+    const roomSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/card-room/{{ room.room_id }}/'
+    );
+
+    roomSocket.onopen = function(e) {
+        console.log('WebSocket connection established');
+    };
+
+    roomSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        
+        if (data.event_type === 'player_update') {
+            updatePlayers(data.data.players);
+            updateRoomStatus(data.data.player_count);
+        }
+    };
+
+    roomSocket.onclose = function(e) {
+        console.log('WebSocket connection closed');
+        // Attempt to reconnect after 1 second
+        setTimeout(function() {
+            window.location.reload();
+        }, 1000);
+    };
+
+    // Update Players List
+    function updatePlayers(players) {
+        const playersList = document.getElementById('players-list');
+        const playerCount = document.getElementById('player-count');
+        
+        playersList.innerHTML = '';
+        players.forEach(player => {
+            const li = document.createElement('li');
+            li.setAttribute('data-player-id', player.id);
+            li.textContent = player.username;
+            playersList.appendChild(li);
+        });
+        
+        playerCount.textContent = players.length;
+    }
+
+    // Update Room Status
+    function updateRoomStatus(playerCount) {
+        const statusDiv = document.getElementById('room-status');
+        if (playerCount === 2) {
+            statusDiv.innerHTML = `
+                <div class="text-green-600">Room is full! Game can begin.</div>
+                <a href="{% url 'matching_card:game_board' room.room_id %}" 
+                   class="block w-full bg-green-500 hover:bg-green-600 text-white text-center font-semibold py-2 px-4 rounded mt-4 transition-colors">
+                    Start Game
+                </a>
+            `;
+        } else {
+            statusDiv.innerHTML = '<div class="text-yellow-600">Waiting for another player...</div>';
+        }
+    }
+
+    // Copy functions
+    function copyToClipboard() {
+        const roomUrl = document.getElementById('roomUrl');
+        roomUrl.select();
+        document.execCommand('copy');
+        showCopyNotification('URL copied to clipboard!');
+    }
+
+    function copyRoomId() {
+        const roomId = document.getElementById('roomId');
+        roomId.select();
+        document.execCommand('copy');
+        showCopyNotification('Room ID copied to clipboard!');
+    }
+
+    function showCopyNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-500';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 500);
+        }, 2000);
+    }
+
+    // Handle page unload
+    window.addEventListener('beforeunload', function() {
+        roomSocket.send(JSON.stringify({
+            'type': 'player_leave',
+            'room_id': '{{ room.room_id }}',
+            'player_id': '{{ request.user.id }}'
+        }));
+    });
+
+    // Keep WebSocket alive
+    setInterval(function() {
+        if (roomSocket.readyState === WebSocket.OPEN) {
+            roomSocket.send(JSON.stringify({
+                'type': 'heartbeat'
+            }));
+        }
+    }, 30000);
+</script>
+{% endblock %}
