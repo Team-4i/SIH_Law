@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'snake_ladder',
     'matching_card',
     'channels',
+    'housie_consti',
     
 ]
 

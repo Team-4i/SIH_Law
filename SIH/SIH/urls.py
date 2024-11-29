@@ -23,4 +23,5 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('game/', include('snake_ladder.urls')),
     path('matching-card/', include('matching_card.urls')),
+    path('housie-consti/', include('housie_consti.urls')),
 ]
